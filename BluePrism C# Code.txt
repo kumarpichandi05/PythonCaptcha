@@ -1,0 +1,36 @@
+// Initialize output variables
+Output = "";
+Error = "";
+FileFound = false;
+FileName = "";
+
+try
+{
+    System.Diagnostics.ProcessStartInfo start = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = @"C:\Python\.venv\Scripts\python.exe",
+        Arguments = "\"c:\\Python\\captcha_ocr.py\"",
+        UseShellExecute = false,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true,
+        CreateNoWindow = false
+    };
+
+    using (System.Diagnostics.Process process = System.Diagnostics.Process.Start(start))
+    {
+        Output = process.StandardOutput.ReadToEnd();
+		
+		int startIndex = Output.IndexOf("Extracted Text:");
+		if (startIndex >= 0)
+		{
+			Output = Output.Substring(startIndex + "Extracted Text:".Length);
+		}
+        Error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+    }
+	
+}
+catch (Exception ex)
+{
+    Error = "Exception: " + ex.Message;
+}
