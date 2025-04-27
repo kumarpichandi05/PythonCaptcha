@@ -1,0 +1,18 @@
+try
+{
+    PACIProcessingLibrary.PACIProcessor.CaptureData(
+        paciNumber,
+        baseUrl,
+        browserPath,
+        (int)waitTimeMs,
+        urlPatternRegex,
+        outputFolderPath,
+        out ResultMessage,
+        out ErrorMessage
+    );
+}
+catch (Exception ex)
+{
+    ErrorMessage = "Unhandled exception: " + ex.Message;
+    ResultMessage = "Error";
+}
