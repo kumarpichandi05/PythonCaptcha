@@ -1,0 +1,79 @@
+Offline Installation Procedure for Python Packages - CSC CAPTCHA - PROD Environment
+
+Purpose
+This document outlines the offline installation steps for the required Python packages needed to configure CSC CAPTCHA functionality in the PROD Environment, where internet access is restricted.
+1. Prerequisites
+- Python 3.12.3 (64-bit) installed
+- .NET Core SDK installed
+- Access to an online machine (for initial package downloads)
+- Access to transfer files to the offline production machine
+2. Required Python Packages
+- opencv-python
+- paddleocr
+- paddlepaddle
+- (and their dependencies)
+3. Process Overview
+Step
+Description
+1
+Download all required packages and dependencies on an online machine
+2
+Transfer downloaded packages to the offline production machine
+3
+Install packages locally without internet access
+4. Detailed Steps
+4.1 On an Online Machine (Preparation)
+1. Open Command Prompt or PowerShell.
+2. Create a folder to store the packages:
+mkdir captcha_packages
+cd captcha_packages
+
+3. Download all required packages and their dependencies:
+pip download opencv-python -d captcha_packages
+pip download paddleocr -d captcha_packages
+pip download paddlepaddle -d captcha_packages
+
+4. Verify that all files are downloaded successfully.
+4.2 Transfer Files to Offline Machine
+- Copy the entire captcha_packages folder to the offline PROD server.
+- Suggested directory: C:\captcha_packages
+4.3 On the Offline Machine (Installation)
+1. Open Command Prompt.
+2. Navigate to your Python virtual environment if created:
+cd path\to\your\captcha_env\Scripts
+activate
+
+3. Install the packages offline using:
+pip install --no-index --find-links=C:\captcha_packages opencv-python paddleocr paddlepaddle
+
+4. Confirm successful installation using:
+pip list
+
+5. Optional: Installation Automation
+You can create a batch file (.bat) for easy installation:
+@echo off
+cd C:\captcha_packages
+call path\to\your\captcha_env\Scripts\activate
+pip install --no-index --find-links=C:\captcha_packages opencv-python paddleocr paddlepaddle
+echo Installation Completed Successfully!
+pause
+
+6. Additional Note: PaddleOCR Model Files
+- PaddleOCR may attempt to download pretrained models during its first run.
+- To ensure complete offline functionality, it is recommended to pre-download the model files separately and configure PaddleOCR to use local paths.
+- Further guidance for offline PaddleOCR model setup can be provided if required.
+Summary Checklist
+Task
+Status
+Python 3.12.3 Installed
+Pending
+.NET Core SDK Installed
+Pending
+Packages Downloaded
+Pending
+Packages Transferred to Offline Machine
+Pending
+Packages Installed Offline
+Pending
+PaddleOCR Offline Model Setup (Optional)
+Pending
