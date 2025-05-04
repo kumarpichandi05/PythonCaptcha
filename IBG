@@ -117,3 +117,44 @@ To set up and configure Blue Prism Runtime Resources (also called Digital Worker
 
 6. Test the Resource
 	•	From Control Room, right-click on the runtime resource and choose “Start” with a sample process to verify it’s working.
+
+1. Network Access Requirements
+
+A. If using Direct Database Connection
+	•	Runtime Resource → SQL Server
+	•	Port: 1433 (default for SQL Server)
+	•	Firewall Rule: Allow inbound on port 1433 on SQL Server
+	•	DNS or IP: Runtime must resolve SQL Server hostname or IP
+
+B. If using Application Server (Recommended)
+	•	Runtime Resource → Blue Prism App Server
+	•	Port:
+	•	Default: 8199 (for SSL)
+	•	Or: 8181 (for non-SSL)
+	•	Firewall Rule: App Server must allow inbound traffic on this port
+	•	Use: The connection is made using Automate.exe /resourcepc /appserver <AppServerName>
+
+⸻
+
+C. Control Room Access
+	•	Interactive Client → Runtime Resource
+	•	Port:
+	•	8181 (non-SSL)
+	•	8199 (SSL-enabled runtime)
+	•	Use: Allows the Control Room to communicate and trigger processes
+
+⸻
+
+2. DNS and Name Resolution
+	•	Ensure that:
+	•	The runtime machine can resolve names like sqlserver01.domain.com, appserver01.domain.com, etc.
+	•	Optionally, use IP addresses if DNS is not available.
+
+⸻
+
+3. Firewall and Routing
+	•	Open ports:
+	•	Between Runtime → App Server
+	•	Between Runtime → SQL Server (if using direct DB)
+	•	Between Control Room → Runtime (8181/8199)
+	•	Allow inbound and outbound access as per the direction of connection.
