@@ -79,3 +79,41 @@ SQL Database
 	•	All communication across regions is securely encrypted.
 	•	Monitoring and bot deployment are centralized through Kuwait infrastructure.
 	•	The load balancer ensures high availability and fault tolerance of BP application services.
+
+To set up and configure Blue Prism Runtime Resources (also called Digital Workers or Runtime Machines), follow these essential steps:
+
+⸻
+
+1. Prepare the Environment
+	•	Install Blue Prism: Install the Blue Prism software on each Runtime Resource machine.
+	•	System Requirements: Ensure the machine meets the required hardware and software prerequisites (e.g., Windows OS, .NET Framework, etc.).
+	•	Network Access: Ensure the machine can connect to the Blue Prism Application Server (or directly to the Database, if no app server is used).
+
+⸻
+
+2. Create Runtime Resource User Accounts
+	•	Windows User: Create a dedicated Windows user account for each runtime resource.
+	•	Blue Prism User: Create a corresponding Blue Prism user (if not using SSO) or assign the Windows account in Blue Prism’s user roles.
+
+⸻
+
+3. Configure the Runtime Resource Machine
+	•	Login Agent (optional): Install and configure the Blue Prism Login Agent if robots need to log in automatically.
+	•	Disable Sleep/Auto-lock: Ensure the system doesn’t auto-lock or go to sleep, which may interrupt automation.
+
+⸻
+
+4. Connect to the Environment
+	•	Command Line Execution: Use the following command to run the Blue Prism client in resource mode:
+•	Firewall & Ports: Ensure port 8181 (default) is open to allow communication between the Control Room and Runtime Resource.
+
+⸻
+
+5. Register the Runtime Resource
+	•	Once started in resource mode, it should appear in Control Room > Resources in Blue Prism.
+	•	If it doesn’t appear, check firewall, network, and correct command execution.
+
+⸻
+
+6. Test the Resource
+	•	From Control Room, right-click on the runtime resource and choose “Start” with a sample process to verify it’s working.
