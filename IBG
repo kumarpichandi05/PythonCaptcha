@@ -1,0 +1,81 @@
+IBG RPA Production Environment Overview
+
+1. Introduction
+
+This document provides a detailed overview of the IBG RPA Production environment setup, including user access, infrastructure layout, application flow, and data management. The environment supports robotic process automation (RPA) operations across multiple regions (Kuwait, KSA, UAE, BR, etc.), ensuring secure, reliable, and monitored bot execution.
+
+⸻
+
+2. User Access
+
+2.1 Vendor Access (EY Users)
+	•	Users: EY Vendor users
+	•	Access Method: VPN
+	•	Connection Type: Secure connection through VPN gateway to the Kuwait workstation
+	•	Ports Used: TCP-389 (for PAM access)
+
+⸻
+
+3. Infrastructure Layout
+
+3.1 Kuwait Segment
+	•	Workstations:
+	•	Internal workstation IP range: 1x.xx.xx.xx
+	•	In-house IP range: 10.xx.xx.xx
+	•	Jump Machine:
+	•	Monitors and controls RPA bots
+	•	Communicates with runtime VMs in other regions
+	•	Protocols:
+	•	PAM via TCP 389
+
+⸻
+
+4. Runtime Resource Nodes (IBG)
+
+RPA runtime VMs are distributed across four regions:
+	•	KSA (Kingdom of Saudi Arabia)
+	•	UAE (United Arab Emirates)
+	•	BR (Bahrain)
+	•	SG/CH (Singapore/Switzerland)
+
+Connectivity:
+	•	Network Type: VPN/MPLS tunnels
+	•	Management: All runtime VMs are monitored and accessed via the Kuwait Jump Machine
+
+⸻
+
+5. Application Layer
+
+5.1 Load Balancer
+	•	Type: WAF/F5
+	•	Server: F5 VIP (Load Balancer)
+	•	Ports: TCP 8199 / 8181
+
+5.2 Blue Prism Application Servers
+	•	Quantity: 2 Instances
+	•	IP Range: 10.xx.xx.xx
+	•	Function: Hosts Blue Prism application logic
+	•	Ports: TCP 8199 / 8181
+
+⸻
+
+6. Data Layer
+
+SQL Database
+	•	Type: BP SQL DB Server
+	•	Connection Protocol: TCP 1433
+	•	Purpose: Stores RPA configuration, logs, queue data, and audit information
+
+⸻
+
+7. Security
+	•	Protocols: Secure communication using SSL (illustrated with SSL badge)
+	•	Access Management: Role-based access via PAM (Privileged Access Management)
+	•	Monitoring: Centralized monitoring from the Kuwait Jump Machine
+
+⸻
+
+8. Notes
+	•	All communication across regions is securely encrypted.
+	•	Monitoring and bot deployment are centralized through Kuwait infrastructure.
+	•	The load balancer ensures high availability and fault tolerance of BP application services.
