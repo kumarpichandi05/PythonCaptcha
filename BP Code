@@ -14,5 +14,29 @@ try
 catch (Exception ex)
 {
     ErrorMessage = "Unhandled exception: " + ex.Message;
-    ResultMessage = "Error";
+    ResultMessage = "using System.IO;
 }
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+
+public class PdfCropper
+{
+    public static void CropPdf(string inputPath, string outputPath, float llx, float lly, float urx, float ury)
+    {
+        using (var reader = new PdfReader(inputPath))
+        using (var fs = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
+        using (var stamper = new PdfStamper(reader, fs))
+        {
+            int pageCount = reader.NumberOfPages;
+            for (int i = 1; i <= pageCount; i++)
+            {
+                var page = reader.GetPageN(i);
+                var crop = new Rectangle(llx, lly, urx, ury);
+                page.Put(PdfName.CROPBOX, new PdfRectangle(crop));
+            }
+        }
+    }
+}
+
+
+
