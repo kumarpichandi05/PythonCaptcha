@@ -37,6 +37,14 @@ public class PdfCropper
         }
     }
 }
+string filePath = @"C:\Path\To\YourFile.xlsx";
 
+using (var workbook = new XLWorkbook(filePath))
+{
+    var worksheet = workbook.Worksheet(1); // First worksheet
+    var value = worksheet.Cell("A1").Value.ToString(); // Read cell A1
+
+    Console.WriteLine("A1 Value: " + value);
+}
 
 
