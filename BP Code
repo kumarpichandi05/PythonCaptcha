@@ -108,41 +108,45 @@ static List<Dictionary<string, object>> ParseExchangeRates(string input)
             }
         }
 
-        return list;
+        return static List<Dictionary<string, object>> ParseExchangeRates(string input)
+{
+    // Clean up input (optional steps for spacing and line issues)
+    input = Regex.Replace(input, @"\r\n|\r|\n", "\n");
+    input = Regex.Replace(input, @"\s+", " ");
+
+    // Pattern to match 7 groups: currency, 4 rates, threshold, reporting limit (optional threshold/reporting can be made optional if needed)
+    string pattern = @"([A-Z]{3})\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d,]+)?\s+([\d,]+)?";
+
+    var matches = Regex.Matches(input, pattern);
+    var list = new List<Dictionary<string, object>>();
+
+    foreach (Match match in matches)
+    {
+        try
+        {
+            var data = new Dictionary<string, object>
+            {
+                ["Currency"] = match.Groups[1].Value,
+                ["TransferBuyRate"] = decimal.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture),
+                ["TransferSellRate"] = decimal.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture),
+                ["CashBuyRate"] = decimal.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture),
+                ["CashSellRate"] = decimal.Parse(match.Groups[5].Value, CultureInfo.InvariantCulture),
+                ["Threshold"] = match.Groups[6].Success 
+                                ? decimal.Parse(match.Groups[6].Value.Replace(",", ""), CultureInfo.InvariantCulture) 
+                                : null,
+                ["ReportingLimit"] = match.Groups[7].Success 
+                                ? decimal.Parse(match.Groups[7].Value.Replace(",", ""), CultureInfo.InvariantCulture) 
+                                : null
+            };
+
+            list.Add(data);
+        }
+        catch
+        {
+            Console.WriteLine($"Could not parse: {match.Value}");
+        }
     }
 
-_____\\\\
-string pattern = @"^([A-Z]{3})\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s+([\d,]+))?$";
-
-        List<ExchangeRate> rates = new List<ExchangeRate>();
-
-        foreach (string line in lines)
-        {
-            Match match = Regex.Match(line.Trim(), pattern);
-
-            if (match.Success)
-            {
-                var rate = new ExchangeRate
-                {
-                    Currency = match.Groups[1].Value,
-                    TransferBuyRate = decimal.Parse(match.Groups[2].Value),
-                    TransferSellRate = decimal.Parse(match.Groups[3].Value),
-                    CashBuyRate = decimal.Parse(match.Groups[4].Value),
-                    CashSellRate = decimal.Parse(match.Groups[5].Value),
-                    Threshold = match.Groups[6].Success 
-                        ? decimal.Parse(match.Groups[6].Value.Replace(",", "")) 
-                        : (decimal?)null
-                };
-
-                rates.Add(rate);
-            }
-        }
-
-        // Save as JSON
-        string json = JsonSerializer.Serialize(rates, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText("exchange_rates.json", json);
-
-        Console.WriteLine("Saved to exchange_rates.json");
-
-
+    return list;
+}
 
