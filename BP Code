@@ -150,3 +150,34 @@ static List<Dictionary<string, object>> ParseExchangeRates(string input)
     return list;
 }
 
+-----MER ------/
+
+// Normalize line spacing
+        input = Regex.Replace(input, @"\s+", " ");
+
+        // Match: CURRENCY AED [optional USD]
+        string pattern = @"([A-Z]{3})\s+([\d.]+)(?:\s+([\d.]+))?";
+        var matches = Regex.Matches(input, pattern);
+
+        var exchangeRates = new List<Dictionary<string, object>>();
+
+        foreach (Match match in matches)
+        {
+            var data = new Dictionary<string, object>
+            {
+                ["Currency"] = match.Groups[1].Value,
+                ["AED_Rate"] = decimal.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture),
+                ["USD_Rate"] = match.Groups[3].Success
+                    ? decimal.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture)
+                    : null
+            };
+            exchangeRates.Add(data);
+        }
+
+        // Convert to JSON
+        string json = JsonSerializer.Serialize(exchangeRates, new JsonSerializerOptions { WriteIndented = true });
+
+        // Save JSON file
+        File.WriteAllText("exchange_rates_from_raw_text.json", json);
+        Console.WriteLine("Saved to exchange_rates_from_raw_text.json");
+
