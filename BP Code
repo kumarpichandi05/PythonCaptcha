@@ -231,3 +231,93 @@ var lines = input.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntr
         string json = JsonSerializer.Serialize(exchangeRates, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText("exchange_rates_from_raw_text.json", json);
         Console.WriteLine("Saved to exchange_rates_from_raw_text.json");
+
+------//////
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+class Program
+{
+    static void Main()
+    {
+        string input = @"
+CORPORATE#
+Monday, 28 April 2025
+US$ Value Wednesday, 30 April 2025
+GEP Value Tuesday, 29 April 2025
+USE CBP EURIBOR
+SOFR 4.29000 SONIA 4.4531 Monday.
+1-M 4.32162 -- 4.3067 3-M 2.1520
+3-M 4.27965 3-M 4.1977 1-M 2.1510
+6-M 4.13100 6-M 4.0464 3-M 2.1860
+12-M 3.85509 12-M 3.8533 6-M 2.1240
+1-Y 2.0660
+
+CAS CAS
+O/N 0.00644 O/N -0.0024 €STER
+1-W 0.09099 1-W 0.0769 €STER 2.16700
+1-M 0.11448 1-M 0.0326 SW 2.3041
+2-M 0.13456 2-M 0.0633 1-M 2.37844
+3-M 0.126161 3-M 0.1193 3-M 2.55159
+6-M 0.4592 6-M 0.2766 6-M 2.85145
+12-M 0.72513 1-Y 0.4644 1-Y 3.29008
+
+KIBOR EBOR
+Value 30 Apr 2025
+O/N 2.11875
+SW 3.5625
+O/N 1.29554
+SW 4.38742
+1-M 3.75
+1-M 4.30802
+3-M 4
+6-M 4.1875
+3-M 4.10176
+6-M 4.06217
+12-M 4.4375
+1-Y 4.15232
+";
+
+        var headers = new[] { "US\\$", "GBP", "EURIBOR", "CAS", "€STER", "KIBOR", "EBOR" };
+        var results = new List<Dictionary<string, object>>();
+
+        foreach (var header in headers)
+        {
+            var pattern = $@"{header}\s*(.*?)(?=(US\$|GBP|EURIBOR|CAS|€STER|KIBOR|EBOR|\Z))";
+            var match = Regex.Match(input, pattern, RegexOptions.Singleline);
+
+            if (match.Success)
+            {
+                var block = match.Groups[1].Value;
+                var numberPattern = @"([A-Z\-\/]+)?\s*([-+]?\d+\.\d+)";
+                var blockData = new List<Dictionary<string, object>>();
+
+                foreach (Match numberMatch in Regex.Matches(block, numberPattern))
+                {
+                    var label = string.IsNullOrWhiteSpace(numberMatch.Groups[1].Value) ? null : numberMatch.Groups[1].Value;
+                    var value = decimal.Parse(numberMatch.Groups[2].Value, CultureInfo.InvariantCulture);
+
+                    blockData.Add(new Dictionary<string, object>
+                    {
+                        ["Label"] = label,
+                        ["Value"] = value
+                    });
+                }
+
+                results.Add(new Dictionary<string, object>
+                {
+                    ["Header"] = header.Replace("\\", ""),
+                    ["Data"] = blockData
+                });
+            }
+        }
+
+        string json = JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText("structured_interest_rates.json", json);
+        Console.WriteLine("Saved to structured_interest_rates.json");
+    }
+}
