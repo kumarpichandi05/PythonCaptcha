@@ -115,7 +115,7 @@ static List<Dictionary<string, object>> ParseExchangeRates(string input)
     input = Regex.Replace(input, @"\s+", " ");
 
     // Pattern to match 7 groups: currency, 4 rates, threshold, reporting limit (optional threshold/reporting can be made optional if needed)
-    string pattern = @"([A-Z]{3})\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d,]+)?\s+([\d,]+)?";
+    string pattern = @"([A-Z]{3})\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s+([\d,]+))?(?:\s+([\d,]+))?";
 
     var matches = Regex.Matches(input, pattern);
     var list = new List<Dictionary<string, object>>();
