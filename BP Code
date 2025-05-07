@@ -46,5 +46,35 @@ using (var workbook = new XLWorkbook(filePath))
 
     Console.WriteLine("A1 Value: " + value);
 }
+foreach (var line in lines)
+        {
+            var parts = line.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length == 7)
+            {
+                exchangeRates.Add(new ExchangeRate
+                {
+                    Currency = parts[0],
+                    TransferBuyRate = decimal.Parse(parts[1], CultureInfo.InvariantCulture),
+                    TransferSellRate = decimal.Parse(parts[2], CultureInfo.InvariantCulture),
+                    CashBuyRate = decimal.Parse(parts[3], CultureInfo.InvariantCulture),
+                    CashSellRate = decimal.Parse(parts[4], CultureInfo.InvariantCulture),
+                    Threshold = decimal.Parse(parts[5].Replace(",", ""), CultureInfo.InvariantCulture),
+                    ReportingLimit = decimal.Parse(parts[6].Replace(",", ""), CultureInfo.InvariantCulture)
+                });
+            }
+        }
+
+        // Display the results
+        foreach (var rate in exchangeRates)
+        {
+            Console.WriteLine($"{rate.Currency}: " +
+                              $"TRF = {rate.TransferBuyRate}/{rate.TransferSellRate}, " +
+                              $"CSH = {rate.CashBuyRate}/{rate.CashSellRate}, " +
+                              $"Threshold = {rate.Threshold}, Limit = {rate.ReportingLimit}");
+        }
+    }
+}
+
 
 
