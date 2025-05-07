@@ -111,5 +111,38 @@ static List<Dictionary<string, object>> ParseExchangeRates(string input)
         return list;
     }
 
+_____\\\\
+string pattern = @"^([A-Z]{3})\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s+([\d,]+))?$";
+
+        List<ExchangeRate> rates = new List<ExchangeRate>();
+
+        foreach (string line in lines)
+        {
+            Match match = Regex.Match(line.Trim(), pattern);
+
+            if (match.Success)
+            {
+                var rate = new ExchangeRate
+                {
+                    Currency = match.Groups[1].Value,
+                    TransferBuyRate = decimal.Parse(match.Groups[2].Value),
+                    TransferSellRate = decimal.Parse(match.Groups[3].Value),
+                    CashBuyRate = decimal.Parse(match.Groups[4].Value),
+                    CashSellRate = decimal.Parse(match.Groups[5].Value),
+                    Threshold = match.Groups[6].Success 
+                        ? decimal.Parse(match.Groups[6].Value.Replace(",", "")) 
+                        : (decimal?)null
+                };
+
+                rates.Add(rate);
+            }
+        }
+
+        // Save as JSON
+        string json = JsonSerializer.Serialize(rates, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText("exchange_rates.json", json);
+
+        Console.WriteLine("Saved to exchange_rates.json");
+
 
 
