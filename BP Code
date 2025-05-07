@@ -180,4 +180,54 @@ static List<Dictionary<string, object>> ParseExchangeRates(string input)
         // Save JSON file
         File.WriteAllText("exchange_rates_from_raw_text.json", json);
         Console.WriteLine("Saved to exchange_rates_from_raw_text.json");
+---////
+var lines = input.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+        var exchangeRates = new List<Dictionary<string, object>>();
+        var currencies = new List<string>();
+        int index = 0;
 
+        while (index < lines.Length)
+        {
+            var line = lines[index].Trim();
+
+            // If line has currency codes
+            if (Regex.IsMatch(line, @"^([A-Z]{3}\s+)+$"))
+            {
+                currencies = new List<string>(line.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+                index++;
+                continue;
+            }
+
+            // If line has numbers, map them to currencies
+            var values = Regex.Matches(line, @"[\d.]+");
+            if (values.Count > 0 && currencies.Count > 0)
+            {
+                int valIndex = 0;
+                foreach (var currency in currencies)
+                {
+                    decimal? aed = null, usd = null;
+
+                    if (valIndex < values.Count)
+                        aed = decimal.Parse(values[valIndex++].Value, CultureInfo.InvariantCulture);
+
+                    if (valIndex < values.Count)
+                        usd = decimal.Parse(values[valIndex++].Value, CultureInfo.InvariantCulture);
+
+                    exchangeRates.Add(new Dictionary<string, object>
+                    {
+                        ["Currency"] = currency,
+                        ["AED_Rate"] = aed,
+                        ["USD_Rate"] = usd
+                    });
+                }
+
+                currencies.Clear(); // Clear after mapping
+            }
+
+            index++;
+        }
+
+        // Save as JSON
+        string json = JsonSerializer.Serialize(exchangeRates, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText("exchange_rates_from_raw_text.json", json);
+        Console.WriteLine("Saved to exchange_rates_from_raw_text.json");
