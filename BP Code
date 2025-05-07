@@ -75,6 +75,41 @@ foreach (var line in lines)
         }
     }
 }
+static List<Dictionary<string, object>> ParseExchangeRates(string input)
+    {
+        input = Regex.Replace(input, @"€", "");
+        input = Regex.Replace(input, @"\s+", " ");
+
+        var pattern = new Regex(@"([A-Z]{3}) ([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+) ([\d,]+) ([\d,]+)");
+        var matches = pattern.Matches(input);
+
+        var list = new List<Dictionary<string, object>>();
+
+        foreach (Match match in matches)
+        {
+            try
+            {
+                var data = new Dictionary<string, object>
+                {
+                    ["Currency"] = match.Groups[1].Value,
+                    ["TransferBuyRate"] = decimal.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture),
+                    ["TransferSellRate"] = decimal.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture),
+                    ["CashBuyRate"] = decimal.Parse(match.Groups[4].Value, CultureInfo.InvariantCulture),
+                    ["CashSellRate"] = decimal.Parse(match.Groups[5].Value, CultureInfo.InvariantCulture),
+                    ["Threshold"] = decimal.Parse(match.Groups[6].Value.Replace(",", ""), CultureInfo.InvariantCulture),
+                    ["ReportingLimit"] = decimal.Parse(match.Groups[7].Value.Replace(",", ""), CultureInfo.InvariantCulture)
+                };
+
+                list.Add(data);
+            }
+            catch
+            {
+                Console.WriteLine($"Could not parse: {match.Value}");
+            }
+        }
+
+        return list;
+    }
 
 
 
