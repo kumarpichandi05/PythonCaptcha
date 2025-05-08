@@ -365,4 +365,97 @@ var result = new List<Dictionary<string, object>>();
 
         string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText("fixed_deposit_rates.json", json);
+        Console.WriteLine("Saved to fixed_deposit_rates.using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using iTextSharp.text.pdf;
+using iTextSharp.text.pdf.parser;
+
+public class Program
+{
+    public static void InterestRates(string path)
+    {
+        var result = new List<Dictionary<string, object>>();
+
+        using (PdfReader reader = new PdfReader(path))
+        {
+            StringBuilder text = new StringBuilder();
+            ITextExtractionStrategy strategy = new LocationTextExtractionStrategy();
+
+            for (int i = 1; i <= reader.NumberOfPages; i++)
+            {
+                string pageText = PdfTextExtractor.GetTextFromPage(reader, i, strategy);
+                text.AppendLine(pageText);
+            }
+
+            List<string> rawLines = new List<string>(text.ToString().Split('\n'));
+            string currentCurrency = "";
+            string[] tenors = null;
+
+            for (int k = 0; k < rawLines.Count; k++)
+            {
+                string line = rawLines[k].Trim();
+
+                if (line.StartsWith("1 Mth"))
+                {
+                    tenors = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                }
+                else if (Regex.IsMatch(line, @"^[A-Z]{3}$"))
+                {
+                    currentCurrency = line;
+                }
+                else if (Regex.IsMatch(line, @"^\d") || line.Contains("-"))
+                {
+                    string range = line;
+                    k++;
+                    if (k < rawLines.Count)
+                    {
+                        string rateLine = rawLines[k].Trim();
+                        var rates = rateLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+                        var entry = new Dictionary<string, object>
+                        {
+                            ["Currency"] = currentCurrency,
+                            ["Range"] = range
+                        };
+
+                        for (int j = 0; j < rates.Length && j < tenors?.Length; j++)
+                        {
+                            if (decimal.TryParse(rates[j], NumberStyles.Any, CultureInfo.InvariantCulture, out var value))
+                            {
+                                entry[tenors[j]] = value;
+                            }
+                        }
+
+                        result.Add(entry);
+                    }
+                }
+            }
+        }
+
+        string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText("fixed_deposit_rates.json", json);
         Console.WriteLine("Saved to fixed_deposit_rates.json");
+    }
+
+    static void Main()
+    {
+        string pdfPath = "your_pdf_path_here.pdf";  // Replace with your actual path
+        InterestRates(pdfPath);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
