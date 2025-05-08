@@ -321,3 +321,48 @@ SW 4.38742
         Console.WriteLine("Saved to structured_interest_rates.json");
     }
 }
+
+////////::
+var result = new List<Dictionary<string, object>>();
+        string currentCurrency = "";
+        string[] tenors = null;
+
+        for (int i = 0; i < rawLines.Count; i++)
+        {
+            string line = rawLines[i].Trim();
+
+            if (line.StartsWith("1 Mth"))
+            {
+                tenors = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            }
+            else if (Regex.IsMatch(line, @"^[A-Z]{3}$"))
+            {
+                currentCurrency = line;
+            }
+            else if (Regex.IsMatch(line, @"^\d"))
+            {
+                string range = line;
+                i++;
+                if (i < rawLines.Count)
+                {
+                    string rateLine = rawLines[i];
+                    var rates = rateLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    var entry = new Dictionary<string, object>
+                    {
+                        ["Currency"] = currentCurrency,
+                        ["Range"] = range
+                    };
+
+                    for (int j = 0; j < rates.Length && j < tenors.Length; j++)
+                    {
+                        entry[tenors[j]] = decimal.TryParse(rates[j], NumberStyles.Any, CultureInfo.InvariantCulture, out var val) ? val : 0;
+                    }
+
+                    result.Add(entry);
+                }
+            }
+        }
+
+        string json = JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText("fixed_deposit_rates.json", json);
+        Console.WriteLine("Saved to fixed_deposit_rates.json");
