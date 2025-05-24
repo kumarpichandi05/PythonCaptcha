@@ -1,0 +1,2 @@
+[console_scripts]
+ocr-image-processing = ocr_image_processing.main:main

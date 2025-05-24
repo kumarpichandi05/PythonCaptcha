@@ -1,0 +1,38 @@
+Metadata-Version: 2.4
+Name: ocr_image_processing
+Version: 0.1
+Summary: A script to process images and extract text using OCR.
+Home-page: https://github.com/kumarpichandi05/PythonCaptcha
+Author: Your Name
+Author-email: your.email@example.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License=MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: opencv-python
+Requires-Dist: numpy
+Requires-Dist: paddleocr
+Requires-Dist: paddlePaddle
+Requires-Dist: IPython
+Requires-Dist: matplotlib
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# OCR Image Processing
+
+A Python script for processing images and extracting text using OCR (Optical Character Recognition) with the PaddleOCR library.
+
+## Installation
+
+Install dependencies using pip:
+
+```bash
+pip install .

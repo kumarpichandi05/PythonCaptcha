@@ -1,0 +1,8 @@
+README.md
+setup.py
+ocr_image_processing.egg-info/PKG-INFO
+ocr_image_processing.egg-info/SOURCES.txt
+ocr_image_processing.egg-info/dependency_links.txt
+ocr_image_processing.egg-info/entry_points.txt
+ocr_image_processing.egg-info/requires.txt
+ocr_image_processing.egg-info/top_level.txt
