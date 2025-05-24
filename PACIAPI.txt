@@ -1,0 +1,124 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using PuppeteerSharp;
+using Newtonsoft.Json;
+using System.Text.RegularExpressions;
+
+namespace APITesting
+{
+    internal class Program
+    {
+        private static readonly string parentUrl = "https://gis.paci.gov.kw/Search/";
+
+        static async Task getUri(string paci, string uri)
+        {
+            string apiUrl = uri;  // Replace with your actual API URL
+
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    // Send GET request to the API
+                    HttpResponseMessage response = await client.GetAsync(apiUrl);
+
+                    // Ensure we got a successful response (status code 2xx)
+                    response.EnsureSuccessStatusCode();
+
+                    // Read the response content as raw JSON string
+                    string rawJsonResponse = await response.Content.ReadAsStringAsync();
+
+                    // Print or log the raw JSON response
+                    Console.WriteLine("Raw JSON Response: ");
+                    Console.WriteLine(rawJsonResponse);
+                    var parsedJson = JsonConvert.DeserializeObject(rawJsonResponse); // Deserialize to an object
+                    var finaljson = JsonConvert.SerializeObject(parsedJson, Formatting.Indented); // Serialize back to formatted JSON
+                    Console.WriteLine(finaljson);
+
+                    // Save the JSON response to a file
+                    string fileName = SanitizeFileName(paci) + ".json";  // Generate a safe file name
+                    string filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+
+                    // Serialize the response to a formatted JSON string and write to file
+                    File.WriteAllText(filePath, JsonConvert.SerializeObject(JsonConvert.DeserializeObject(finaljson), Formatting.Indented));
+                    Console.WriteLine($"Response saved as {fileName}");
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error fetching the response: " + ex.Message);
+                }
+            }
+        }
+
+        // Helper function to sanitize the URL into a safe filename
+        static string SanitizeFileName(string url)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(url, "[^a-z0-9]", "_").ToLower(); // Replace invalid characters with underscores
+        }
+
+        static async Task CaptureRequestsAndResponses(string paci)
+        {
+            var browserFetcher = new BrowserFetcher(new BrowserFetcherOptions
+            {
+                Path = Path.Combine(Directory.GetCurrentDirectory(), "chrome") // Download Chrome or Edge's version if necessary
+            });
+            await browserFetcher.DownloadAsync();
+
+            // Set the path to the installed Edge browser
+            var edgeExecutablePath = @"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"; // Replace with the correct path to Edge
+
+            var launchOptions = new LaunchOptions
+            {
+                ExecutablePath = edgeExecutablePath,  // Specify Microsoft Edge executable path
+                Headless = true  // Run in headless mode (without UI)
+            };
+
+            var browser = await Puppeteer.LaunchAsync(launchOptions);
+            var page = await browser.NewPageAsync();
+
+            var requestUrls = new List<string>();
+            var responseUrls = new List<string>();
+           
+
+            // Listen for network requests
+            page.Request += (sender, e) =>
+            {
+                var requestUrl = e.Request.Url;
+
+                // Example regular expression to match URLs that contain "search" and "params="
+                string pattern = @"search\?params=.*";
+
+                // Use Regex to check if the URL matches the pattern
+                if (Regex.IsMatch(requestUrl, pattern))
+                {
+                    Console.WriteLine("Request matches pattern: " + requestUrl);
+                    requestUrls.Add(requestUrl); // Store the request URL
+                    getUri(paci, requestUrl);
+                }
+            };
+
+            // Navigate to the target page using the provided PACI number
+            await page.GoToAsync(parentUrl + paci);
+
+            // Wait for some time or until all requests/responses are captured
+            await Task.Delay(8000); // Adjust the timeout as needed
+
+            // Close the browser
+            await browser.CloseAsync();
+            Console.WriteLine("Browser closed");
+            Environment.Exit(0); // Explicitly exit
+        }
+
+        static async Task Main(string[] args)
+        {
+            // Define the PACI number you want to test
+            string paciNumber = "18742264";
+
+            // Run the function with the PACI number as the parameter
+            await CaptureRequestsAndResponses(paciNumber);
+        }
+    }
+}
