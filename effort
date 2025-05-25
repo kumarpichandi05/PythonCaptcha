@@ -1,0 +1,45 @@
+Effort Estimation Report for Cancelled Projects
+
+1. Project Overview
+	•	Project Name
+	•	Project Objective
+	•	Business Unit / Stakeholders Involved
+	•	Project Start Date
+	•	Date of Cancellation
+	•	Reason for Cancellation
+
+2. Total Effort Invested
+	•	Total Person-Hours / Days
+	•	Effort by Role (e.g., Business Analyst, Developer, QA, Architect)
+	•	Percentage Completion at Cancellation (optional)
+
+3. Work Done Before Cancellation
+
+Breakdown of tasks that were completed or partially completed:
+	•	Requirement Gathering (e.g., BRD, HLD, LLD)
+	•	Design Documents
+	•	Integration Planning
+	•	UI/UX Prototypes
+	•	Table Structures / Database Setup
+	•	API Design or Consumption
+	•	Stakeholder Meetings / Reviews
+	•	POCs (Proof of Concept)
+
+4. Artifacts Created
+
+List of documents and assets produced:
+	•	BRDs / HLAs / DSDs / CFS
+	•	Design diagrams
+	•	Excel sheets (mapping, sizing)
+	•	Mockups or HTML demos
+	•	Test cases or test plans
+
+5. Lessons Learned / Recommendations
+	•	Bottlenecks or blockers identified
+	•	Communication gaps
+	•	Better pre-evaluation or requirement clarity needed
+	•	Suggested process improvements
+
+6. Summary
+	•	Total Effort Lost vs Reusable Work
+	•	Any partial deliverables that can be reused in future projects
