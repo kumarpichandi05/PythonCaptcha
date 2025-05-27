@@ -1,0 +1,41 @@
+using System;
+using iText.IO.Image;
+using iText.Kernel.Pdf;
+using iText.Kernel.Geom;
+using iText.Kernel.Pdf.Canvas;
+using iText.Layout;
+using iText.Layout.Element;
+
+class AddPngStamp
+{
+    static void Main(string[] args)
+    {
+        string srcPdf = "input.pdf";
+        string destPdf = "output.pdf";
+        string stampImage = "stamp.png"; // Your PNG file path
+
+        using (PdfReader reader = new PdfReader(srcPdf))
+        using (PdfWriter writer = new PdfWriter(destPdf))
+        using (PdfDocument pdfDoc = new PdfDocument(reader, writer))
+        {
+            ImageData imageData = ImageDataFactory.Create(stampImage);
+            int totalPages = pdfDoc.GetNumberOfPages();
+
+            for (int i = 1; i <= totalPages; i++)
+            {
+                PdfPage page = pdfDoc.GetPage(i);
+                Rectangle pageSize = page.GetPageSize();
+                float x = pageSize.GetWidth() - 120; // Adjust X for position
+                float y = 40;                         // Adjust Y for position
+
+                PdfCanvas pdfCanvas = new PdfCanvas(page.NewContentStreamAfter(), page.GetResources(), pdfDoc);
+                iText.Layout.Canvas canvas = new iText.Layout.Canvas(pdfCanvas, pageSize);
+                Image image = new Image(imageData).ScaleToFit(80, 80).SetFixedPosition(x, y);
+                canvas.Add(image);
+                canvas.Close();
+            }
+        }
+
+        Console.WriteLine("PNG stamp added to PDF.");
+    }
+}
