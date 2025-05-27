@@ -1,0 +1,82 @@
+using System;
+using System.IO;
+using iText.Kernel.Pdf;
+using iText.Kernel.Utils;
+using iText.Kernel.Pdf.Canvas.Parser;
+
+namespace pdfoverlay
+{
+    class Program
+    {
+        public static void Main(string[] args)
+        {
+            string inputPdf = @"C:\Sathish\Samples\FullDocument.pdf";
+            string outputFolder = @"C:\Sathish\Samples\Splits\";
+            string splitKeyword = "StartSection"; // Customize this
+
+            Directory.CreateDirectory(outputFolder);
+
+            PdfDocument srcDoc = new PdfDocument(new PdfReader(inputPdf));
+            PdfSplitter splitter = new PdfSplitter(srcDoc, splitKeyword, outputFolder);
+            splitter.SplitByKeyword();
+
+            srcDoc.Close();
+            Console.WriteLine("PDF split completed.");
+        }
+    }
+
+    class PdfSplitter
+    {
+        private PdfDocument sourceDoc;
+        private string keyword;
+        private string outputDir;
+
+        public PdfSplitter(PdfDocument doc, string keyword, string outputDir)
+        {
+            this.sourceDoc = doc;
+            this.keyword = keyword;
+            this.outputDir = outputDir;
+        }
+
+        public void SplitByKeyword()
+        {
+            int part = 1;
+            PdfDocument currentDoc = null;
+            PdfWriter writer = null;
+
+            for (int i = 1; i <= sourceDoc.GetNumberOfPages(); i++)
+            {
+                var page = sourceDoc.GetPage(i);
+                string text = PdfTextExtractor.GetTextFromPage(page);
+
+                if (text.Contains(keyword))
+                {
+                    // Close previous split
+                    if (currentDoc != null)
+                    {
+                        currentDoc.Close();
+                        writer.Close();
+                    }
+
+                    // Start new split
+                    string splitFile = Path.Combine(outputDir, $"Part_{part}.pdf");
+                    writer = new PdfWriter(splitFile);
+                    currentDoc = new PdfDocument(writer);
+                    part++;
+                }
+
+                if (currentDoc != null)
+                {
+                    sourceDoc.CopyPagesTo(i, i, currentDoc);
+                }
+            }
+
+            // Close last document
+            if (currentDoc != null)
+            {
+                currentDoc.Close();
+                writer.Close();
+            }
+        }
+    }
+}
