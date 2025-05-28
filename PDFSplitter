@@ -80,3 +80,94 @@ namespace pdfoverlay
         }
     }
 }
+using System;
+using System.IO;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+
+namespace pdfoverlay
+{
+    class Program
+    {
+        public static void Main(string[] args)
+        {
+            string inputPdf = @"C:\Sathish\Samples\FullDocument.pdf";
+            string outputFolder = @"C:\Sathish\Samples\CustomerSplits\";
+
+            Directory.CreateDirectory(outputFolder);
+
+            PdfDocument sourceDoc = new PdfDocument(new PdfReader(inputPdf));
+            string previousCustomerName = null;
+            List<int> currentCustomerPages = new List<int>();
+
+            for (int i = 1; i <= sourceDoc.GetNumberOfPages(); i++)
+            {
+                var page = sourceDoc.GetPage(i);
+                string pageText = PdfTextExtractor.GetTextFromPage(page);
+                string customerName = ExtractCustomerName(pageText);
+
+                if (string.IsNullOrWhiteSpace(customerName))
+                    customerName = "Unknown";
+
+                if (previousCustomerName == null)
+                {
+                    previousCustomerName = customerName;
+                }
+
+                if (!customerName.Equals(previousCustomerName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Save previous group
+                    SaveCustomerPdf(sourceDoc, currentCustomerPages, previousCustomerName, outputFolder);
+                    currentCustomerPages.Clear();
+                    previousCustomerName = customerName;
+                }
+
+                currentCustomerPages.Add(i);
+            }
+
+            // Save the last group
+            if (currentCustomerPages.Count > 0)
+            {
+                SaveCustomerPdf(sourceDoc, currentCustomerPages, previousCustomerName, outputFolder);
+            }
+
+            sourceDoc.Close();
+            Console.WriteLine("Customer-based PDF split completed.");
+        }
+
+        static void SaveCustomerPdf(PdfDocument sourceDoc, List<int> pages, string customerName, string folder)
+        {
+            string safeName = MakeFilenameSafe(customerName);
+            string outputPath = Path.Combine(folder, $"{safeName}.pdf");
+
+            using (PdfWriter writer = new PdfWriter(outputPath))
+            using (PdfDocument newDoc = new PdfDocument(writer))
+            {
+                foreach (int pageNum in pages)
+                {
+                    sourceDoc.CopyPagesTo(pageNum, pageNum, newDoc);
+                }
+            }
+
+            Console.WriteLine($"Saved: {customerName} ({pages.Count} pages)");
+        }
+
+        static string ExtractCustomerName(string text)
+        {
+            // Adjust regex as per your PDF content
+            Match match = Regex.Match(text, @"Customer Name[:\- ]+([A-Za-z\s]+)");
+            return match.Success ? match.Groups[1].Value.Trim() : null;
+        }
+
+        static string MakeFilenameSafe(string name)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                name = name.Replace(c, '_');
+            }
+            return name;
+        }
+    }
+}
