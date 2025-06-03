@@ -1,0 +1,36 @@
+using Microsoft.AspNetCore.Mvc;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+
+namespace SeleniumScraperApi.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ScrapeController : ControllerBase
+    {
+        [HttpGet("extract")]
+        public IActionResult Extract([FromQuery] string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return BadRequest(new { success = false, error = "URL is required" });
+
+            try
+            {
+                var options = new ChromeOptions();
+                options.AddArgument("--headless");
+                options.AddArgument("--no-sandbox");
+                options.AddArgument("--disable-dev-shm-usage");
+
+                using var driver = new ChromeDriver(options);
+                driver.Navigate().GoToUrl(url);
+                var title = driver.Title;
+
+                return Ok(new { success = true, pageTitle = title });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = ex.Message });
+            }
+        }
+    }
+}
