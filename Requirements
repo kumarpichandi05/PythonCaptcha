@@ -3,3 +3,66 @@
 	3.	Get item from AppWorks queue
 	4.	Use Selenium (in C#) to open a browser, submit data, and extract value
 	5.	(Optional) Update the value back to AppWorks
+
+using System;
+using System.Diagnostics;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+
+class Program
+{
+    static async Task Main()
+    {
+        string driverPath = @"C:\Tools\Selenium\msedgedriver.exe"; // <-- Update path if needed
+        int port = 9515; // We'll ask msedgedriver to start on a fixed port
+
+        Console.WriteLine("🟡 Launching msedgedriver...");
+
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = driverPath,
+                Arguments = $"--port={port}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.OutputDataReceived += (sender, args) => Console.WriteLine("🟢 Driver Output: " + args.Data);
+        process.ErrorDataReceived += (sender, args) => Console.WriteLine("🔴 Driver Error: " + args.Data);
+
+        process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
+        Console.WriteLine("⏳ Waiting 2 seconds for msedgedriver to start...");
+        Thread.Sleep(2000);
+
+        Console.WriteLine("🌐 Checking connection to http://localhost:" + port + "/status");
+
+        using (var client = new HttpClient())
+        {
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync($"http://localhost:{port}/status");
+                string content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("✅ Connection successful!");
+                Console.WriteLine("Response:\n" + content);
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine("❌ Failed to connect to EdgeDriver at localhost:" + port);
+                Console.WriteLine("Reason: " + ex.Message);
+                Console.WriteLine("💡 Check if firewall or antivirus is blocking local ports.");
+            }
+        }
+
+        Console.WriteLine("\n🔚 Press any key to kill driver and exit...");
+        Console.ReadKey();
+        try { process.Kill(); } catch { }
+    }
+}
