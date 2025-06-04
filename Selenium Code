@@ -38,3 +38,30 @@ class Program
         Console.ReadKey();
     }
 }
+using OpenQA.Selenium;
+using OpenQA.Selenium.Edge;
+using System;
+
+class Program
+{
+    static void Main()
+    {
+        string driverPath = @"C:\Tools\Selenium"; // Folder containing msedgedriver.exe
+
+        var service = EdgeDriverService.CreateDefaultService(driverPath);
+        service.Port = 9515; // ✅ Set your desired port here
+        service.UseVerboseLogging = true;
+        service.SuppressInitialDiagnosticInformation = false;
+
+        var options = new EdgeOptions();
+
+        using (var driver = new EdgeDriver(service, options))
+        {
+            driver.Navigate().GoToUrl("https://www.google.com/");
+            Console.WriteLine("Page Title: " + driver.Title);
+        }
+    }
+}
+
+
+
