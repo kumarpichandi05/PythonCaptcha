@@ -1,0 +1,5 @@
+	1.	Read data from Excel
+	2.	Create case/item in AppWorks queue
+	3.	Get item from AppWorks queue
+	4.	Use Selenium (in C#) to open a browser, submit data, and extract value
+	5.	(Optional) Update the value back to AppWorks
