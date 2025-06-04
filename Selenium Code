@@ -1,0 +1,40 @@
+using OpenQA.Selenium;
+using OpenQA.Selenium.Edge;
+using System;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        try
+        {
+            // ✅ Path to the folder that contains msedgedriver.exe
+            string driverFolder = @"C:\MsEdgeDrive";
+
+            var service = EdgeDriverService.CreateDefaultService(driverFolder);
+            service.UseVerboseLogging = true;
+            service.LogPath = "edgedriver.log"; // Saves full logs
+            service.SuppressInitialDiagnosticInformation = false;
+
+            var options = new EdgeOptions();
+
+            using (var driver = new EdgeDriver(service, options))
+            {
+                driver.Navigate().GoToUrl("https://www.google.com");
+                Console.WriteLine("✅ Page Title: " + driver.Title);
+            }
+        }
+        catch (WebDriverException ex)
+        {
+            Console.WriteLine("❌ WebDriverException: " + ex.Message);
+            Console.WriteLine("Stack Trace:\n" + ex.StackTrace);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ General Exception: " + ex.Message);
+        }
+
+        Console.WriteLine("Press any key to exit...");
+        Console.ReadKey();
+    }
+}
