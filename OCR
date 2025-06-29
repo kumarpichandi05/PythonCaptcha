@@ -1,0 +1,63 @@
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using iText.IO.Image;
+using Tesseract;
+using System;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Drawing;
+
+class Program
+{
+    static void Main()
+    {
+        string pdfPath = @"C:\path\to\scanned.pdf";
+        string tessDataPath = @"C:\Program Files\Tesseract-OCR\tessdata";
+
+        using var pdfDoc = new PdfDocument(new PdfReader(pdfPath));
+        var engine = new TesseractEngine(tessDataPath, "eng", EngineMode.Default);
+
+        for (int i = 1; i <= pdfDoc.GetNumberOfPages(); i++)
+        {
+            var page = pdfDoc.GetPage(i);
+            var strategy = new FilteredEventListener();
+            var imageRenderListener = new ImageRenderListener(i);
+            strategy.AttachEventListener(imageRenderListener);
+            PdfCanvasProcessor parser = new PdfCanvasProcessor(strategy);
+            parser.ProcessPageContent(page);
+
+            foreach (var imagePath in imageRenderListener.ImagePaths)
+            {
+                using var img = Pix.LoadFromFile(imagePath);
+                using var result = engine.Process(img);
+                Console.WriteLine($"Text on page {i}:\n{result.GetText()}");
+                File.Delete(imagePath); // Clean up temp file
+            }
+        }
+    }
+
+    class ImageRenderListener : IEventListener
+    {
+        private readonly int _pageNum;
+        public List<string> ImagePaths { get; } = new List<string>();
+
+        public ImageRenderListener(int pageNum) => _pageNum = pageNum;
+
+        public void EventOccurred(IEventData data, EventType type)
+        {
+            if (type == EventType.RENDER_IMAGE)
+            {
+                var renderInfo = (ImageRenderInfo)data;
+                var imageObj = renderInfo.GetImage();
+                var imgBytes = imageObj.GetImageBytes();
+                var img = System.Drawing.Image.FromStream(new MemoryStream(imgBytes));
+                var fileName = Path.Combine(Path.GetTempPath(), $"page_{_pageNum}.png");
+                img.Save(fileName, ImageFormat.Png);
+                ImagePaths.Add(fileName);
+            }
+        }
+
+        public ICollection<EventType> GetSupportedEvents() => new[] { EventType.RENDER_IMAGE };
+    }
+}
