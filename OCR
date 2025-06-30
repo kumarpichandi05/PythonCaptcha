@@ -155,6 +155,57 @@ public void ConvertPdfToPngUsingPdfium(string pdfPath, string outputFolder, int 
 }
 
 
+using System;
+using System.Drawing;
+using System.IO;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas;
+
+public class PdfToPngConverter
+{
+    public static void Convert(string pdfPath, string outputDirectory, int dpi = 300)
+    {
+        if (!Directory.Exists(outputDirectory))
+            Directory.CreateDirectory(outputDirectory);
+
+        // Load PDF
+        using (var pdfDoc = new PdfDocument(new PdfReader(pdfPath)))
+        {
+            var numberOfPages = pdfDoc.GetNumberOfPages();
+
+            for (int pageNum = 1; pageNum <= numberOfPages; pageNum++)
+            {
+                var page = pdfDoc.GetPage(pageNum);
+
+                // Create a PDF renderer
+                var renderer = new PdfCanvasRenderer(page);
+
+                // Render to a System.Drawing.Bitmap
+                var pdfPageSize = page.GetPageSize();
+                int width = (int)(pdfPageSize.GetWidth() * dpi / 72);
+                int height = (int)(pdfPageSize.GetHeight() * dpi / 72);
+
+                using (var bitmap = new Bitmap(width, height))
+                using (var graphics = Graphics.FromImage(bitmap))
+                {
+                    graphics.Clear(Color.White);
+                    renderer.Render(graphics, width, height);
+
+                    // Save as PNG
+                    string outputPath = Path.Combine(outputDirectory, $"page_{pageNum}.png");
+                    bitmap.Save(outputPath, System.Drawing.Imaging.ImageFormat.Png);
+                }
+            }
+        }
+    }
+}
+
+// Usage:
+PdfToPngConverter.Convert("input.pdf", "output_images", 300);
+
+
 
 
 
