@@ -206,6 +206,61 @@ public class PdfToPngConverter
 PdfToPngConverter.Convert("input.pdf", "output_images", 300);
 
 
+using System;
+using System.IO;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
+
+public class PdfImageExtractor
+{
+    public static void ExtractImages(string pdfPath, string outputDir)
+    {
+        if (!Directory.Exists(outputDir))
+            Directory.CreateDirectory(outputDir);
+
+        using (var pdfDoc = new PdfDocument(new PdfReader(pdfPath)))
+        {
+            var strategy = new ImageExtractionStrategy(outputDir);
+            for (int i = 1; i <= pdfDoc.GetNumberOfPages(); i++)
+            {
+                PdfCanvasProcessor parser = new PdfCanvasProcessor(strategy);
+                parser.ProcessPageContent(pdfDoc.GetPage(i));
+            }
+        }
+    }
+}
+
+public class ImageExtractionStrategy : IEventListener
+{
+    private readonly string _outputDir;
+    private int _imageCount = 0;
+
+    public ImageExtractionStrategy(string outputDir)
+    {
+        _outputDir = outputDir;
+    }
+
+    public void EventOccurred(IEventData data, EventType type)
+    {
+        if (data is ImageRenderInfo imageData)
+        {
+            var image = imageData.GetImage();
+            if (image == null) return;
+
+            byte[] bytes = image.GetImageBytes();
+            string outputPath = Path.Combine(_outputDir, $"image_{_imageCount++}.png");
+            File.WriteAllBytes(outputPath, bytes);
+        }
+    }
+
+    public ICollection<EventType> GetSupportedEvents() => new List<EventType> { EventType.RENDER_IMAGE };
+}
+
+// Usage:
+PdfImageExtractor.ExtractImages("scanned.pdf", "output_images");
+
+
 
 
 
