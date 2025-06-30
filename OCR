@@ -98,3 +98,40 @@ class Program
     }
 }
 
+using iTextSharp.text.pdf;
+using System.Drawing;
+using System.Drawing.Imaging;
+
+public void ConvertPdfToPng(string pdfPath, string outputFolder)
+{
+    // Create output directory if it doesn't exist
+    Directory.CreateDirectory(outputFolder);
+    
+    using (var document = new PdfReader(pdfPath))
+    {
+        for (int page = 1; page <= document.NumberOfPages; page++)
+        {
+            // Set resolution (DPI)
+            var pdfDoc = new iTextSharp.text.Document();
+            var writer = PdfWriter.GetInstance(pdfDoc, new MemoryStream());
+            pdfDoc.Open();
+            
+            // Get the page
+            var importedPage = writer.GetImportedPage(document, page);
+            
+            // Create bitmap
+            var bitmap = new Bitmap(importedPage.Width, importedPage.Height);
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.Clear(Color.White);
+                g.DrawImage(bitmap, 0, 0, importedPage.Width, importedPage.Height);
+            }
+            
+            // Save as PNG
+            string outputPath = Path.Combine(outputFolder, $"page_{page}.png");
+            bitmap.Save(outputPath, ImageFormat.Png);
+        }
+    }
+}
+
+
