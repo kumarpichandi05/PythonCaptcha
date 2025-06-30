@@ -61,3 +61,40 @@ class Program
         public ICollection<EventType> GetSupportedEvents() => new[] { EventType.RENDER_IMAGE };
     }
 }
+
+using System;
+using System.IO;
+using ImageMagick;
+using Tesseract;
+
+class Program
+{
+    static void Main()
+    {
+        string pdfPath = @"C:\path\to\your\scanned.pdf";
+        string tessDataPath = @"C:\tessdata"; // path to traineddata folder
+
+        using var engine = new TesseractEngine(tessDataPath, "eng", EngineMode.Default);
+
+        using var images = new MagickImageCollection();
+        images.Read(pdfPath);
+
+        int pageIndex = 1;
+        foreach (var image in images)
+        {
+            using var memStream = new MemoryStream();
+            image.Format = MagickFormat.Png;
+            image.Write(memStream);
+            memStream.Position = 0;
+
+            using var img = new System.Drawing.Bitmap(memStream);
+            using var pix = PixConverter.ToPix(img);
+            using var result = engine.Process(pix);
+            
+            Console.WriteLine($"--- Page {pageIndex} ---");
+            Console.WriteLine(result.GetText());
+            pageIndex++;
+        }
+    }
+}
+
