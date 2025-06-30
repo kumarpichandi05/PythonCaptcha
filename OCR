@@ -134,4 +134,24 @@ public void ConvertPdfToPng(string pdfPath, string outputFolder)
     }
 }
 
+using PdfiumViewer;
+using System.Drawing.Imaging;
+
+public void ConvertPdfToPngUsingPdfium(string pdfPath, string outputFolder, int dpi = 300)
+{
+    Directory.CreateDirectory(outputFolder);
+    
+    using (var document = PdfDocument.Load(pdfPath))
+    {
+        for (int i = 0; i < document.PageCount; i++)
+        {
+            using (var image = document.Render(i, (int)(dpi * 1.5), (int)(dpi * 1.5), dpi, dpi, false))
+            {
+                string outputPath = Path.Combine(outputFolder, $"page_{i + 1}.png");
+                image.Save(outputPath, ImageFormat.Png);
+            }
+        }
+    }
+}
+
 
