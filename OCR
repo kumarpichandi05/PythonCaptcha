@@ -259,6 +259,74 @@ public class ImageExtractionStrategy : IEventListener
 
 // Usage:
 PdfImageExtractor.ExtractImages("scanned.pdf", "output_images");
+-------////////------
+
+using Emgu.CV;
+using Emgu.CV.Structure;
+using Emgu.CV.Util;
+using System.Drawing;
+using Tesseract;
+
+public class OCRHelper
+{
+    public string ExtractTextFromBestRegion(string imagePath)
+    {
+        using (var img = new Image<Bgr, byte>(imagePath))
+        {
+            // Convert to grayscale
+            var gray = img.Convert<Gray, byte>();
+
+            // Apply binary threshold to highlight text
+            var binary = gray.ThresholdBinary(new Gray(120), new Gray(255));
+
+            // Find contours (possible text regions)
+            using (var contours = new VectorOfVectorOfPoint())
+            {
+                CvInvoke.FindContours(binary, contours, null, Emgu.CV.CvEnum.RetrType.External,
+                    Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+
+                Rectangle bestRect = new Rectangle();
+                int maxArea = 0;
+
+                for (int i = 0; i < contours.Size; i++)
+                {
+                    var rect = CvInvoke.BoundingRectangle(contours[i]);
+
+                    // Filter small regions
+                    if (rect.Width > 100 && rect.Height > 20)
+                    {
+                        int area = rect.Width * rect.Height;
+                        if (area > maxArea)
+                        {
+                            maxArea = area;
+                            bestRect = rect;
+                        }
+                    }
+                }
+
+                if (maxArea > 0)
+                {
+                    var cropped = img.GetSubRect(bestRect);
+
+                    // Convert cropped region to Bitmap for Tesseract
+                    Bitmap croppedBmp = cropped.ToBitmap();
+
+                    using (var engine = new TesseractEngine(@"./tessdata", "eng", EngineMode.Default))
+                    {
+                        using (var page = engine.Process(croppedBmp))
+                        {
+                            return page.GetText();
+                        }
+                    }
+                }
+                else
+                {
+                    return "No significant text region found.";
+                }
+            }
+        }
+    }
+}
 
 
 
