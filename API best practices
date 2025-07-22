@@ -1,0 +1,76 @@
+1. API Integration Logic
+
+✔️ Best Practices:
+	•	HTTP Method:
+	•	Always confirm and use the correct HTTP method (GET, POST, PUT, DELETE) as per the API specification.
+	•	Headers & Authentication:
+	•	Use Blue Prism Credentials for API tokens or basic auth — avoid hardcoding.
+	•	Set Content-Type: application/json (or as required) in headers.
+	•	Include Authorization header correctly (e.g., Bearer <token>).
+	•	Endpoint Configuration:
+	•	Store base URLs and endpoints in Environment Variables or Process Initialization Pages for easy change management.
+	•	Payload Structure:
+	•	Construct request payloads using JSON Utilities or Collections.
+	•	Validate required fields before sending the request.
+
+⸻
+
+✅ 2. Error Handling
+
+✔️ Best Practices:
+	•	Status Code Checks:
+	•	Always check Response Status Code. Treat 200/201 as success, handle 4xx/5xx accordingly.
+	•	Retry Mechanism:
+	•	Implement retry logic with a counter and delay (e.g., retry 3 times for 500-series errors).
+	•	Use decision stages after API call for retry or fail logic.
+	•	Exception Logging:
+	•	Use Exception Handling to catch errors and log:
+	•	Endpoint called
+	•	Request payload
+	•	Response content
+	•	Status code
+	•	Log into Work Queues, Logs, or external log systems.
+
+⸻
+
+✅ 3. Data Handling
+
+✔️ Best Practices:
+	•	Parsing:
+	•	Use JSON VBO to parse and extract required fields cleanly.
+	•	Handle nested data with correct path references.
+	•	Validation:
+	•	Always validate response values (e.g., non-empty, valid format) before using them in business logic.
+	•	Use Decision stages to handle missing/invalid data gracefully.
+	•	Sensitive Data:
+	•	Never log sensitive content (e.g., passwords, tokens, PII).
+	•	Use Data Encryption or Blue Prism Credentials for storing sensitive values.
+
+⸻
+
+✅ 4. Performance & Reusability
+
+✔️ Best Practices:
+	•	Modular API Logic:
+	•	Create Reusable Actions in a central VBO (e.g., T24_API_Connector) instead of duplicating logic.
+	•	Use input/output parameters to make actions flexible.
+	•	Minimize API Calls:
+	•	Avoid unnecessary calls (e.g., don’t call T24 API twice for same data).
+	•	Cache data in local variables or data items when possible.
+	•	Concurrent Calls:
+	•	If the API supports concurrency, consider multi-bot design or parallel queue processing.
+
+⸻
+
+✅ 5. Security
+
+✔️ Best Practices:
+	•	Secure Storage:
+	•	Store API credentials/tokens in Blue Prism Credential Manager.
+	•	Restrict access via role-based security.
+	•	HTTPS & Certificates:
+	•	Always use SSL/TLS (HTTPS). Never call plain HTTP APIs for production.
+	•	For client certificate-based APIs, import certificates to Blue Prism certificate store.
+	•	Audit & Compliance:
+	•	Maintain audit trails of API usage (request time, endpoint, status).
+	•	Mask sensitive values in logs.
