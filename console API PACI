@@ -1,0 +1,97 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using PuppeteerSharp;
+using Newtonsoft.Json;
+using System.Text.RegularExpressions;
+
+namespace APITesting
+{
+    internal class Program
+    {
+        static async Task GetUri(string paci, string uri, string jsonOutputPath)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    HttpResponseMessage response = await client.GetAsync(uri);
+                    response.EnsureSuccessStatusCode();
+                    string rawJsonResponse = await response.Content.ReadAsStringAsync();
+
+                    var parsedJson = JsonConvert.DeserializeObject(rawJsonResponse);
+                    string finalJson = JsonConvert.SerializeObject(parsedJson, Formatting.Indented);
+                    Console.WriteLine(finalJson);
+
+                    string fileName = Path.Combine(jsonOutputPath, SanitizeFileName(paci) + ".json");
+                    File.WriteAllText(fileName, finalJson);
+                    Console.WriteLine($"Saved response as: {fileName}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error fetching URI: " + ex.Message);
+                }
+            }
+        }
+
+        static string SanitizeFileName(string text)
+        {
+            return Regex.Replace(text, "[^a-zA-Z0-9]", "_");
+        }
+
+        static async Task CaptureRequestsAndResponses(string paci, string parentUrl, string edgePath, string pattern, int delayTime, string jsonOutputPath)
+        {
+            var browserFetcher = new BrowserFetcher(new BrowserFetcherOptions
+            {
+                Path = Path.Combine(Directory.GetCurrentDirectory(), "chrome")
+            });
+            await browserFetcher.DownloadAsync();
+
+            var launchOptions = new LaunchOptions
+            {
+                ExecutablePath = edgePath,
+                Headless = true
+            };
+
+            var browser = await Puppeteer.LaunchAsync(launchOptions);
+            var page = await browser.NewPageAsync();
+
+            page.Request += async (sender, e) =>
+            {
+                string url = e.Request.Url;
+
+                if (Regex.IsMatch(url, pattern))
+                {
+                    Console.WriteLine("Matched request: " + url);
+                    await GetUri(paci, url, jsonOutputPath);
+                }
+            };
+
+            await page.GoToAsync(parentUrl + paci);
+            await Task.Delay(delayTime);
+            await browser.CloseAsync();
+            Console.WriteLine("Browser closed.");
+        }
+
+        static async Task Main(string[] args)
+        {
+            if (args.Length < 6)
+            {
+                Console.WriteLine("Usage:");
+                Console.WriteLine("APITesting.exe <paciNumber> <parentUrl> <edgePath> <pattern> <delayTimeMs> <jsonOutputPath>");
+                return;
+            }
+
+            string paci = args[0];
+            string parentUrl = args[1];
+            string edgePath = args[2];
+            string pattern = args[3];
+            int delayTime = int.TryParse(args[4], out var delay) ? delay : 8000;
+            string jsonOutputPath = args[5];
+
+            await CaptureRequestsAndResponses(paci, parentUrl, edgePath, pattern, delayTime, jsonOutputPath);
+        }
+    }
+}
