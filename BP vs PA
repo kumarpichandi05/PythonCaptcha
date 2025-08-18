@@ -1,0 +1,35 @@
+Blue Prism vs Power Automate – Comparison Table
+
+Feature / Aspect
+Blue Prism
+Power Automate
+Target Audience
+Large enterprises, IT-driven
+SMBs + Enterprises, business users (citizen developers)
+Deployment
+On-premise / private cloud
+Cloud-native (with Power Automate Desktop for RPA)
+Scalability
+Enterprise-grade, supports thousands of bots
+Good for mid-size automations, less mature for very large scale
+Cost
+High license & infra cost
+Lower entry cost, included with Microsoft 365 plans
+Ease of Use
+Steeper learning curve, developer-oriented
+Easy-to-use, low-code/no-code, citizen developer friendly
+Integration
+Strong with legacy apps (Citrix, mainframes, desktop)
+500+ connectors (O365, Teams, SharePoint, Dynamics, Azure)
+AI/ML Capabilities
+Requires third-party integration (e.g., OCR tools, ML platforms)
+Built-in AI Builder (forms processing, sentiment, vision)
+Governance & Security
+Strong compliance, audit logs, centralized control room
+Improving governance, role-based access but less mature
+Performance
+Stable for heavy workloads
+Desktop automation can be slower/less reliable
+Best Use Case
+Enterprise-scale automation with strict compliance needs
+Quick automation for Microsoft ecosystem, AI + business workflows
