@@ -1,0 +1,48 @@
+using System;
+using OtpNet;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Put your Oracle manual entry key here
+        string rawSecret = "YOUR KEY HERE";
+
+        // Clean it up
+        string base32Secret = rawSecret.Replace(" ", "").Replace("-", "").ToUpper();
+
+        // Try Base32 first
+        byte[] secretBytes;
+        try
+        {
+            secretBytes = Base32Encoding.ToBytes(base32Secret);
+        }
+        catch
+        {
+            Console.WriteLine("❌ Not valid Base32, maybe it's Hex?");
+            try
+            {
+                secretBytes = Convert.FromHexString(base32Secret);
+                Console.WriteLine("✔ Using HEX secret");
+            }
+            catch
+            {
+                Console.WriteLine("❌ Secret format not recognized (not Base32, not Hex)");
+                return;
+            }
+        }
+
+        // Try generating OTPs with different settings
+        foreach (var digits in new[] { 6, 8 })
+        {
+            foreach (var step in new[] { 30, 60 })
+            {
+                var totp = new Totp(secretBytes, step: step, totpSize: digits);
+                string otp = totp.ComputeTotp(DateTime.UtcNow);
+                int remaining = totp.RemainingSeconds();
+
+                Console.WriteLine($"OTP ({digits} digits, {step}s): {otp} (valid {remaining}s)");
+            }
+        }
+    }
+}
