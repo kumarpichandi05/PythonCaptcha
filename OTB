@@ -46,3 +46,36 @@ class Program
         }
     }
 }
+
+using System;
+using OtpNet;
+
+class Program
+{
+    static void Main()
+    {
+        // Paste your 52-char manual entry key here
+        string rawSecret = "YOUR_52_CHAR_KEY_WITH_SPACES";
+
+        // Clean spaces/dashes
+        string base32Secret = rawSecret.Replace(" ", "").Replace("-", "").ToUpper();
+
+        // Decode Base32 secret
+        byte[] secretBytes = Base32Encoding.ToBytes(base32Secret);
+
+        // Try 6-digit, 30-second OTP (default for most Oracle accounts)
+        var totp = new Totp(secretBytes, step: 30, totpSize: 6);
+
+        while (true)
+        {
+            string otp = totp.ComputeTotp(DateTime.UtcNow);
+            int remaining = totp.RemainingSeconds();
+
+            Console.Clear();
+            Console.WriteLine($"Oracle OTP: {otp}");
+            Console.WriteLine($"Valid for: {remaining} seconds");
+
+            System.Threading.Thread.Sleep(1000); // refresh every second
+        }
+    }
+}
