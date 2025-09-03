@@ -1,0 +1,39 @@
+Bonus Declaration Automation – Updated Steps
+	1.	Read Input File
+	•	Read CSV file with Name, Reference, Email ID.
+	2.	Load Data to Queue
+	•	Push each employee record into a Blue Prism Work Queue.
+	3.	Send Notification to Staff
+	•	Bot sends bonus declaration email with:
+	•	HTML body
+	•	Approve and Reject buttons
+	4.	Capture Employee Response
+	•	When staff clicks Approve or Reject:
+	•	A reply email is sent back to the Bot’s mailbox.
+	•	Bot reads the response and updates the queue status (Approved / Rejected).
+	5.	Generate Summary Report
+	•	Bot prepares an Excel summary report of all responses.
+	•	Sends the summary report to HR Team until all staff confirm.
+	6.	Completion
+	•	Process ends once all employee confirmations are received.
+
+Appworks Solution
+Bonus Declaration – AppWorks (File Event Based)
+	1.	File Event Trigger
+	•	HR places the CSV file in a shared drive folder.
+	•	A File Event in AppWorks detects the new file.
+	2.	Load Employee Data
+	•	AppWorks automatically reads the CSV.
+	•	Employee records are created/updated in the Employee entity.
+	3.	Start Bonus Declaration Case
+	•	A new Bonus Declaration Case is launched with all employees linked.
+	4.	Portal Task for Staff
+	•	Each employee gets a Worklist task in AppWorks Portal: “Confirm Bonus Declaration”.
+	•	Options: Approve / Reject.
+	5.	Capture Staff Response
+	•	Employee’s choice updates their status (Approved / Rejected) in the entity.
+	6.	HR Dashboard & Report
+	•	HR sees a dashboard with Pending / Approved / Rejected counts.
+	•	Can export to Excel anytime.
+	7.	Case Completion
+	•	Case closes when all employees have responded.
