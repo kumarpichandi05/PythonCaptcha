@@ -1,0 +1,9 @@
+This is my requirement  
+day 1 : receive excel file from three courier companies with return cards with civil id and mask  card number
+Once received the excel file , bot will validate and download the excel file.
+Once saved the file and load into blueprism queue 
+Get 100 civil id and last 4 digits of card number from work queue and manipulate and queried to sap BO for full card number and along with other details 
+Once we get all the details and make it as $U job format and send email to business for confirmation after business confirmation place the file in $u input folder and wait for next day to get report from output folder
+If any exception there in cards then login to respective systems and cancel the card
+
+
