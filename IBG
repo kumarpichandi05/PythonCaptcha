@@ -1,0 +1,26 @@
+IBG RPA Infrastructure
+
+* Application Server: Located in IBG
+* Load Balancer and Blueprism Database Server: Located in Kuwait
+* Bot Virtual Machine (VM): Deployed in each IBG location
+
+Development and Operations:
+
+* Egypt: RPA development and Level 1 support are provided in Egypt. Level 2 support will be offered in Kuwait.
+* United Arab Emirates: RPA development and Level 1 and Level 2 support are provided in Kuwait.
+* Bahrain: RPA development and Level 1 and Level 2 support are provided in Kuwait.
+* Singapore: RPA development and Level 1 and Level 2 support are provided in Kuwait.
+
+Country	RPA Development Location	Level 1 Support Location	Level 2 Support Location
+Egypt	Egypt	Egypt	Kuwait
+United Arab Emirates	Kuwait	Kuwait	Kuwait
+Bahrain	Kuwait	Kuwait	Kuwait
+Singapore	Kuwait	Kuwait	Kuwait
+
+BOT Details
+Process ID	Process Name	IBG Location
+P361	FD Rates	UAE
+	FD Rates	Bahrain 
+		Singapore 
+		Egypt
+
