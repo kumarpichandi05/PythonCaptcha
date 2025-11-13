@@ -1,0 +1,144 @@
+// Input: string InputText (raw audit trail text)
+        // Output: DataTable OutputTable
+        DataTable output = new DataTable();
+        output.Columns.Add("Source", typeof(string));
+        output.Columns.Add("Type", typeof(string));
+        output.Columns.Add("DebitCount", typeof(int));
+        output.Columns.Add("CreditCount", typeof(int));
+        output.Columns.Add("DebitAmount", typeof(decimal));
+        output.Columns.Add("CreditAmount", typeof(decimal));
+
+        string[] lines = InputText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+
+        string currentSource = "";
+        string transactionType = ""; // DEBIT or CREDIT
+        string[] validCardTypes = { "VISA", "MASTER", "DINERS", "UPI" };
+
+        var tempData = new Dictionary<string, (int DebitCount, int CreditCount, decimal DebitAmount, decimal CreditAmount)>();
+
+        for (int i = 0; i < lines.Length; i++) {
+            string line = lines[i].Trim();
+
+            // Skip empty or unwanted lines
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("TOTAL", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            // Detect Source (do NOT reset transactionType here)
+            if (line == "KNET" || line == "ECOM WOL") {
+                // Dump previous source data before switching
+                if (tempData.Count > 0 && currentSource != "") {
+                    foreach (var kvp in tempData) {
+                        DataRow dr = output.NewRow();
+                        dr["Source"] = currentSource;
+                        dr["Type"] = kvp.Key;
+                        dr["DebitCount"] = kvp.Value.DebitCount;
+                        dr["CreditCount"] = kvp.Value.CreditCount;
+                        dr["DebitAmount"] = kvp.Value.DebitAmount;
+                        dr["CreditAmount"] = kvp.Value.CreditAmount;
+                        output.Rows.Add(dr);
+                    }
+                    tempData.Clear();
+                }
+                currentSource = line;
+                // DO NOT reset transactionType here!
+                continue;
+            }
+
+            // Detect Transaction Type
+            if (line == "DEBIT" || line == "CREDIT") {
+                transactionType = line.ToUpper();
+                continue;
+            }
+
+            // Check if line contains a card type
+            string[] parts = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0) continue;
+
+            string typeCandidate = parts[0].ToUpper();
+
+            bool validType = false;
+            foreach (var vct in validCardTypes) {
+                if (vct.Equals(typeCandidate, StringComparison.OrdinalIgnoreCase)) {
+                    validType = true;
+                    break;
+                }
+            }
+            if (!validType) continue;
+
+            int count = 0;
+            decimal amount = 0m;
+
+            // Parse count and amount based on parts length
+            if (parts.Length >= 3) {
+                int.TryParse(parts[1].Replace(",", ""), out count);
+                decimal.TryParse(parts[2].Replace(",", ""), out amount);
+            }
+            else if (parts.Length == 2) {
+                int.TryParse(parts[1].Replace(",", ""), out count);
+                if (i + 1 < lines.Length) {
+                    string nextLine = lines[i + 1].Trim();
+                    if (decimal.TryParse(nextLine.Replace(",", ""), out decimal amt)) {
+                        amount = amt;
+                        i++; // consume next line for amount
+                    }
+                }
+            }
+            else if (parts.Length == 1) {
+                if (i + 1 < lines.Length) {
+                    string nextLine = lines[i + 1].Trim();
+                    if (int.TryParse(nextLine.Replace(",", ""), out int cnt)) {
+                        count = cnt;
+                        if (i + 2 < lines.Length) {
+                            string nextNextLine = lines[i + 2].Trim();
+                            if (decimal.TryParse(nextNextLine.Replace(",", ""), out decimal amt)) {
+                                amount = amt;
+                                i += 2; // consume next two lines
+                            }
+                            else {
+                                i++; // consume next line only
+                            }
+                        }
+                        else {
+                            i++; // consume next line only
+                        }
+                    }
+                    else if (decimal.TryParse(nextLine.Replace(",", ""), out decimal amt)) {
+                        amount = amt;
+                        i++; // consume next line only
+                    }
+                }
+            }
+
+            // Add to tempData for current type and transaction type
+            if (!tempData.ContainsKey(typeCandidate))
+                tempData[typeCandidate] = (0, 0, 0m, 0m);
+
+            var curr = tempData[typeCandidate];
+
+            if (transactionType == "DEBIT") {
+                curr.DebitCount += count;
+                curr.DebitAmount += amount;
+            }
+            else if (transactionType == "CREDIT") {
+                curr.CreditCount += count;
+                curr.CreditAmount += amount;
+            }
+
+            tempData[typeCandidate] = curr;
+        }
+
+        // Add last batch of data if any
+        if (tempData.Count > 0 && currentSource != "") {
+            foreach (var kvp in tempData) {
+                DataRow dr = output.NewRow();
+                dr["Source"] = currentSource;
+                dr["Type"] = kvp.Key;
+                dr["DebitCount"] = kvp.Value.DebitCount;
+                dr["CreditCount"] = kvp.Value.CreditCount;
+                dr["DebitAmount"] = kvp.Value.DebitAmount;
+                dr["CreditAmount"] = kvp.Value.CreditAmount;
+                output.Rows.Add(dr);
+            }
+        }
+
+        OutputTable = output;
