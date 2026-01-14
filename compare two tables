@@ -1,0 +1,79 @@
+System.Data.DataTable srcTable = (System.Data.DataTable)SourceTable;
+System.Data.DataTable tgtTable = (System.Data.DataTable)TargetTable;
+
+// Create output table
+System.Data.DataTable outTable = new System.Data.DataTable();
+outTable.Columns.Add("Reference", typeof(string));
+outTable.Columns.Add("Value Date", typeof(DateTime));
+outTable.Columns.Add("I/O", typeof(string));
+outTable.Columns.Add("SourceAmount", typeof(decimal));
+outTable.Columns.Add("WePay", typeof(decimal));
+outTable.Columns.Add("WeReceive", typeof(decimal));
+outTable.Columns.Add("Status", typeof(string));
+outTable.Columns.Add("Remarks", typeof(string));
+
+foreach (System.Data.DataRow srcRow in srcTable.Rows)
+{
+    string io = srcRow["I/O"].ToString().Trim().ToUpper();
+    string reference = srcRow["Reference"].ToString().Trim();
+    DateTime valueDate = Convert.ToDateTime(srcRow["Value Date"]);
+    decimal curAmt = Convert.ToDecimal(srcRow["Cur/Amt"]);
+
+    string status = "MATCH";
+    string remarks = "";
+
+    System.Data.DataRow[] matches =
+        tgtTable.Select("ExternalReference = '" + reference + "'");
+
+    if (matches.Length == 0)
+    {
+        status = "MISMATCH";
+        remarks = "Reference not found in target";
+    }
+    else
+    {
+        System.Data.DataRow tgtRow = matches[0];
+
+        DateTime currentDate = Convert.ToDateTime(tgtRow["CurrentDate"]);
+        decimal wePay = Convert.ToDecimal(tgtRow["WePay"]);
+        decimal weReceive = Convert.ToDecimal(tgtRow["WeReceive"]);
+
+        if (valueDate.Date != currentDate.Date)
+        {
+            status = "MISMATCH";
+            remarks += "Date mismatch; ";
+        }
+
+        if (io == "I" && weReceive != curAmt)
+        {
+            status = "MISMATCH";
+            remarks += "Amount mismatch (WeReceive); ";
+        }
+        else if (io == "O" && wePay != curAmt)
+        {
+            status = "MISMATCH";
+            remarks += "Amount mismatch (WePay); ";
+        }
+        else if (io != "I" && io != "O")
+        {
+            status = "MISMATCH";
+            remarks += "Invalid I/O value; ";
+        }
+    }
+
+    // Add result row
+    System.Data.DataRow outRow = outTable.NewRow();
+    outRow["Reference"] = reference;
+    outRow["Value Date"] = valueDate;
+    outRow["I/O"] = io;
+    outRow["SourceAmount"] = curAmt;
+    outRow["WePay"] = (io == "O") ? curAmt : 0;
+    outRow["WeReceive"] = (io == "I") ? curAmt : 0;
+    outRow["Status"] = status;
+    outRow["Remarks"] = remarks;
+
+    outTable.Rows.Add(outRow);
+}
+
+// Return output table to Blue Prism
+OutputTable = outTable;
