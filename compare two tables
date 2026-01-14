@@ -1,10 +1,14 @@
+using System.Linq;
+
 System.Data.DataTable srcTable = (System.Data.DataTable)SourceTable;
 System.Data.DataTable tgtTable = (System.Data.DataTable)TargetTable;
 
-// Create output table
+// Prepare output table
 System.Data.DataTable outTable = new System.Data.DataTable();
 outTable.Columns.Add("Reference", typeof(string));
+outTable.Columns.Add("ExternalReference", typeof(string));
 outTable.Columns.Add("Value Date", typeof(DateTime));
+outTable.Columns.Add("CurrentDate", typeof(DateTime));
 outTable.Columns.Add("I/O", typeof(string));
 outTable.Columns.Add("SourceAmount", typeof(decimal));
 outTable.Columns.Add("WePay", typeof(decimal));
@@ -12,68 +16,89 @@ outTable.Columns.Add("WeReceive", typeof(decimal));
 outTable.Columns.Add("Status", typeof(string));
 outTable.Columns.Add("Remarks", typeof(string));
 
-foreach (System.Data.DataRow srcRow in srcTable.Rows)
-{
-    string io = srcRow["I/O"].ToString().Trim().ToUpper();
-    string reference = srcRow["Reference"].ToString().Trim();
-    DateTime valueDate = Convert.ToDateTime(srcRow["Value Date"]);
-    decimal curAmt = Convert.ToDecimal(srcRow["Cur/Amt"]);
+// Optional: performance optimization
+var targetLookup = tgtTable.AsEnumerable()
+    .ToDictionary(
+        r => r.Field<string>("ExternalReference").Trim(),
+        r => r
+    );
 
+var results =
+    from src in srcTable.AsEnumerable()
+    let io = src.Field<string>("I/O").Trim().ToUpper()
+    let reference = src.Field<string>("Reference").Trim()
+    let valueDate = src.Field<DateTime>("Value Date")
+    let curAmt = src.Field<decimal>("Cur/Amt")
+    let tgt = targetLookup.ContainsKey(reference)
+        ? targetLookup[reference]
+        : null
+    select new
+    {
+        Reference = reference,
+        IO = io,
+        ValueDate = valueDate,
+        SourceAmount = curAmt,
+        TargetRow = tgt
+    };
+
+foreach (var r in results)
+{
     string status = "MATCH";
     string remarks = "";
 
-    System.Data.DataRow[] matches =
-        tgtTable.Select("ExternalReference = '" + reference + "'");
+    DateTime? currentDate = null;
+    decimal wePay = 0;
+    decimal weReceive = 0;
+    string externalReference = "";
 
-    if (matches.Length == 0)
+    if (r.TargetRow == null)
     {
         status = "MISMATCH";
         remarks = "Reference not found in target";
     }
     else
     {
-        System.Data.DataRow tgtRow = matches[0];
+        externalReference = r.TargetRow.Field<string>("ExternalReference").Trim();
+        currentDate = r.TargetRow.Field<DateTime>("CurrentDate");
+        wePay = r.TargetRow.Field<decimal>("WePay");
+        weReceive = r.TargetRow.Field<decimal>("WeReceive");
 
-        DateTime currentDate = Convert.ToDateTime(tgtRow["CurrentDate"]);
-        decimal wePay = Convert.ToDecimal(tgtRow["WePay"]);
-        decimal weReceive = Convert.ToDecimal(tgtRow["WeReceive"]);
-
-        if (valueDate.Date != currentDate.Date)
+        if (r.ValueDate.Date != currentDate.Value.Date)
         {
             status = "MISMATCH";
             remarks += "Date mismatch; ";
         }
 
-        if (io == "I" && weReceive != curAmt)
+        if (r.IO == "I" && weReceive != r.SourceAmount)
         {
             status = "MISMATCH";
             remarks += "Amount mismatch (WeReceive); ";
         }
-        else if (io == "O" && wePay != curAmt)
+        else if (r.IO == "O" && wePay != r.SourceAmount)
         {
             status = "MISMATCH";
             remarks += "Amount mismatch (WePay); ";
         }
-        else if (io != "I" && io != "O")
+        else if (r.IO != "I" && r.IO != "O")
         {
             status = "MISMATCH";
             remarks += "Invalid I/O value; ";
         }
     }
 
-    // Add result row
     System.Data.DataRow outRow = outTable.NewRow();
-    outRow["Reference"] = reference;
-    outRow["Value Date"] = valueDate;
-    outRow["I/O"] = io;
-    outRow["SourceAmount"] = curAmt;
-    outRow["WePay"] = (io == "O") ? curAmt : 0;
-    outRow["WeReceive"] = (io == "I") ? curAmt : 0;
+    outRow["Reference"] = r.Reference;
+    outRow["ExternalReference"] = externalReference;
+    outRow["Value Date"] = r.ValueDate;
+    outRow["CurrentDate"] = currentDate.HasValue ? currentDate.Value : (object)System.DBNull.Value;
+    outRow["I/O"] = r.IO;
+    outRow["SourceAmount"] = r.SourceAmount;
+    outRow["WePay"] = (r.IO == "O") ? r.SourceAmount : 0;
+    outRow["WeReceive"] = (r.IO == "I") ? r.SourceAmount : 0;
     outRow["Status"] = status;
     outRow["Remarks"] = remarks;
 
     outTable.Rows.Add(outRow);
 }
 
-// Return output table to Blue Prism
 OutputTable = outTable;
