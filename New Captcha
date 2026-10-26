@@ -1,0 +1,82 @@
+import cv2
+import numpy as np
+from paddleocr import PaddleOCR
+
+def preprocess_captcha(image_path):
+    # 1. Read image
+    img = cv2.imread(image_path)
+    if img is None:
+        raise FileNotFoundError(f"Could not open image at {image_path}")
+
+    # 2. Convert to HSV space to isolate distinct colored lines (e.g., red line noise)
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # Define HSV color range for red line noise (red spans two ranges in HSV)
+    lower_red1 = np.array([0, 70, 50])
+    upper_red1 = np.array([10, 255, 255])
+    lower_red2 = np.array([170, 70, 50])
+    upper_red2 = np.array([180, 255, 255])
+
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+    red_line_mask = cv2.bitwise_or(mask1, mask2)
+
+    # Dilate mask slightly to cover line edges
+    kernel_line = np.ones((3, 3), np.uint8)
+    red_line_mask = cv2.dilate(red_line_mask, kernel_line, iterations=1)
+
+    # Inpaint to fill in the pixels obscured by the red line
+    inpainted = cv2.inpaint(img, red_line_mask, inpaintRadius=3, flags=cv2.INPAINT_TELEA)
+
+    # 3. Convert to Grayscale
+    gray = cv2.cvtColor(inpainted, cv2.COLOR_BGR2GRAY)
+
+    # 4. Remove background grid pattern using adaptive thresholding
+    # Converts image to high-contrast binary (black text on white background)
+    binary = cv2.adaptiveThreshold(
+        gray,
+        255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY,
+        blockSize=15,
+        C=8
+    )
+
+    # 5. Denoise stray pixels (checkerboard dots) using morphological operations
+    kernel_clean = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
+    cleaned = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel_clean)
+
+    return cleaned
+
+
+def solve_captcha(image_path):
+    # Preprocess image
+    processed_img = preprocess_captcha(image_path)
+
+    # Save temporary processed image for PaddleOCR input
+    temp_path = "processed_temp.png"
+    cv2.imwrite(temp_path, processed_img)
+
+    # Initialize PaddleOCR engine
+    # Setting det=False bypasses bounding box detection if the text line is pre-cropped
+    ocr = PaddleOCR(use_angle_cls=False, lang='en', show_log=False)
+
+    # Run OCR (using det=False directly analyzes text recognition)
+    result = ocr.ocr(temp_path, det=False, rec=True, cls=False)
+
+    # Extract text and confidence score
+    if result and result[0]:
+        text, confidence = result[0][0]
+        print(f"Recognized Text: {text}")
+        print(f"Confidence Score: {confidence:.2f}")
+        return text
+    else:
+        print("No text detected.")
+        return None
+
+
+if __name__ == "__main__":
+    image_file = "captcha.png"  # Replace with path to your captcha image
+    
+    # Process and print output
+    text_result = solve_captcha(image_file)
