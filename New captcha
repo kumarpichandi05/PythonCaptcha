@@ -1,0 +1,323 @@
+
+import cv2
+import numpy as np
+import os
+from paddleocr import PaddleOCR
+
+# ==========================================
+# 1. CONFIGURATION
+# ==========================================
+
+INPUT_IMAGE = r"C:\OCR\Input\sample.png"
+
+OUTPUT_FOLDER = r"C:\OCR\Processed"
+
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# ==========================================
+# 2. LOAD IMAGE
+# ==========================================
+
+image = cv2.imread(INPUT_IMAGE)
+
+if image is None:
+    raise FileNotFoundError(
+        f"Unable to load image: {INPUT_IMAGE}"
+    )
+
+print("Original image size:", image.shape)
+
+# ==========================================
+# 3. REMOVE RED STRIKE-THROUGH LINE
+# ==========================================
+
+def remove_red_line(img):
+
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # Detect red colour in two HSV ranges
+    lower_red1 = np.array([0, 70, 50])
+    upper_red1 = np.array([12, 255, 255])
+
+    lower_red2 = np.array([165, 70, 50])
+    upper_red2 = np.array([180, 255, 255])
+
+    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
+    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+
+    red_mask = cv2.bitwise_or(mask1, mask2)
+
+    # Create a diagonal line-shaped kernel
+    kernel = np.zeros((31, 31), dtype=np.uint8)
+
+    cv2.line(
+        kernel,
+        (2, 16),
+        (28, 14),
+        255,
+        2
+    )
+
+    # Detect elongated red line segments
+    line_mask = cv2.morphologyEx(
+        red_mask,
+        cv2.MORPH_OPEN,
+        kernel
+    )
+
+    # Expand detected line slightly
+    line_mask = cv2.dilate(
+        line_mask,
+        np.ones((3, 3), np.uint8),
+        iterations=1
+    )
+
+    # Remove detected line using inpainting
+    cleaned = cv2.inpaint(
+        img,
+        line_mask,
+        3,
+        cv2.INPAINT_TELEA
+    )
+
+    return cleaned, line_mask
+
+
+cleaned_image, red_line_mask = remove_red_line(image)
+
+cv2.imwrite(
+    os.path.join(OUTPUT_FOLDER, "01_red_line_mask.png"),
+    red_line_mask
+)
+
+cv2.imwrite(
+    os.path.join(OUTPUT_FOLDER, "02_line_removed.png"),
+    cleaned_image
+)
+
+# ==========================================
+# 4. CONVERT TO GRAYSCALE
+# ==========================================
+
+gray = cv2.cvtColor(
+    cleaned_image,
+    cv2.COLOR_BGR2GRAY
+)
+
+cv2.imwrite(
+    os.path.join(OUTPUT_FOLDER, "03_grayscale.png"),
+    gray
+)
+
+# ==========================================
+# 5. IMPROVE CONTRAST USING CLAHE
+# ==========================================
+
+clahe = cv2.createCLAHE(
+    clipLimit=3.0,
+    tileGridSize=(8, 8)
+)
+
+contrast = clahe.apply(gray)
+
+cv2.imwrite(
+    os.path.join(OUTPUT_FOLDER, "04_contrast.png"),
+    contrast
+)
+
+# ==========================================
+# 6. IMAGE SHARPENING
+# ==========================================
+
+blurred = cv2.GaussianBlur(
+    contrast,
+    (0, 0),
+    2
+)
+
+sharpened = cv2.addWeighted(
+    contrast,
+    1.8,
+    blurred,
+    -0.8,
+    0
+)
+
+cv2.imwrite(
+    os.path.join(OUTPUT_FOLDER, "05_sharpened.png"),
+    sharpened
+)
+
+# ==========================================
+# 7. OTSU THRESHOLDING
+# ==========================================
+
+_, otsu = cv2.threshold(
+    sharpened,
+    0,
+    255,
+    cv2.THRESH_BINARY + cv2.THRESH_OTSU
+)
+
+cv2.imwrite(
+    os.path.join(OUTPUT_FOLDER, "06_otsu.png"),
+    otsu
+)
+
+# ==========================================
+# 8. ADAPTIVE THRESHOLDING
+# ==========================================
+
+adaptive = cv2.adaptiveThreshold(
+    sharpened,
+    255,
+    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+    cv2.THRESH_BINARY,
+    31,
+    11
+)
+
+cv2.imwrite(
+    os.path.join(OUTPUT_FOLDER, "07_adaptive.png"),
+    adaptive
+)
+
+# ==========================================
+# 9. RESIZE IMAGES FOR OCR
+# ==========================================
+
+def resize_image(img, scale=2):
+
+    height, width = img.shape[:2]
+
+    resized = cv2.resize(
+        img,
+        (width * scale, height * scale),
+        interpolation=cv2.INTER_CUBIC
+    )
+
+    return resized
+
+
+# Prepare different OCR versions
+processed_images = {
+    "Original": image,
+    "Grayscale": gray,
+    "Contrast": contrast,
+    "Sharpened": sharpened,
+    "Otsu": otsu,
+    "Adaptive": adaptive
+}
+
+# ==========================================
+# 10. INITIALIZE PADDLE OCR
+# ==========================================
+
+ocr = PaddleOCR(
+    use_angle_cls=False,
+    lang="en",
+    use_gpu=False,
+    show_log=False
+)
+
+# ==========================================
+# 11. EXTRACT TEXT
+# ==========================================
+
+def extract_text(result):
+
+    extracted = []
+
+    if result is None:
+        return extracted
+
+    for page in result:
+
+        if page is None:
+            continue
+
+        for line in page:
+
+            if line is None:
+                continue
+
+            text_value = line[1][0]
+            confidence = line[1][1]
+
+            extracted.append(
+                (text_value, confidence)
+            )
+
+    return extracted
+
+
+# ==========================================
+# 12. RUN OCR ON ALL VERSIONS
+# ==========================================
+
+for name, processed in processed_images.items():
+
+    print("\n" + "=" * 50)
+    print("PROCESSING:", name)
+    print("=" * 50)
+
+    # Resize
+    resized = resize_image(processed, scale=2)
+
+    # Save resized image
+    output_path = os.path.join(
+        OUTPUT_FOLDER,
+        name.lower() + "_ocr.png"
+    )
+
+    cv2.imwrite(output_path, resized)
+
+    # Convert grayscale images to BGR
+    if len(resized.shape) == 2:
+
+        ocr_image = cv2.cvtColor(
+            resized,
+            cv2.COLOR_GRAY2BGR
+        )
+
+    else:
+
+        ocr_image = resized
+
+    # Run PaddleOCR
+    try:
+
+        result = ocr.ocr(
+            ocr_image,
+            cls=False
+        )
+
+        print("Result type:", type(result))
+        print("Raw result:", result)
+
+        extracted_text = extract_text(result)
+
+        if extracted_text:
+
+            print("\nEXTRACTED TEXT:")
+
+            for text_value, confidence in extracted_text:
+
+                print(
+                    f"Text: {text_value} "
+                    f"| Confidence: {confidence:.4f}"
+                )
+
+        else:
+
+            print("No text detected.")
+
+    except Exception as e:
+
+        print("OCR ERROR:", str(e))
+
+
+print("\n================================")
+print("OCR PROCESSING COMPLETED")
+print("Output folder:", OUTPUT_FOLDER)
+print("================================")
