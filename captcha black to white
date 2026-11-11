@@ -1,0 +1,56 @@
+
+import cv2
+import numpy as np
+
+INPUT_IMAGE = r"C:\OCR\Input\sample.png"
+
+# Read PNG including alpha channel
+image = cv2.imread(
+    INPUT_IMAGE,
+    cv2.IMREAD_UNCHANGED
+)
+
+if image is None:
+    raise FileNotFoundError(INPUT_IMAGE)
+
+print("Image shape:", image.shape)
+print("Image data type:", image.dtype)
+
+# Handle transparent PNG
+if len(image.shape) == 3 and image.shape[2] == 4:
+
+    print("PNG contains Alpha channel")
+
+    bgr = image[:, :, :3]
+    alpha = image[:, :, 3]
+
+    # Create white background
+    white_background = np.full(
+        bgr.shape,
+        255,
+        dtype=np.uint8
+    )
+
+    alpha_float = alpha[:, :, np.newaxis] / 255.0
+
+    image = (
+        bgr * alpha_float +
+        white_background * (1 - alpha_float)
+    ).astype(np.uint8)
+
+elif len(image.shape) == 2:
+
+    # Convert grayscale to BGR
+    image = cv2.cvtColor(
+        image,
+        cv2.COLOR_GRAY2BGR
+    )
+
+# Save normalized image
+cv2.imwrite(
+    r"C:\OCR\Processed\normalized.png",
+    image
+)
+
+print("Normalized image size:", image.shape)
+print("Image successfully normalized")
